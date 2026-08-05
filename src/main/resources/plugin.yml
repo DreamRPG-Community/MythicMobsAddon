@@ -1,0 +1,16 @@
+name: MythicMobsAddon
+version: ${version}
+main: cn.mythicland.mythicmobsaddon.MythicMobsAddonPlugin
+author: MythicMobsAddon Maintainers
+load: POSTWORLD
+depend: [Lib, MythicMobs]
+description: MythicMobs item management addon.
+commands:
+  mythicmobsaddon:
+    description: Manage MythicMobsAddon items.
+    aliases: [mma]
+    usage: /mythicmobsaddon <items|reload>
+permissions:
+  mythicmobsaddon.admin:
+    description: Manage MythicMobsAddon MM items.
+    default: op

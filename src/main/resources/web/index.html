@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MythicMobsAddon</title>
+  <link rel="stylesheet" href="/web/style.css">
+  <style>body.locked #app-shell { display: none; }</style>
+</head>
+<body class="locked">
+  <div id="app-shell" class="app-shell" aria-hidden="true">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">MM</span><span>MythicMobsAddon</span></div>
+      <div class="top-actions">
+        <span id="status-line" class="status offline">未连接</span>
+        <button id="reload" class="button secondary">刷新</button>
+        <button id="save-top" class="button primary">保存</button>
+      </div>
+    </header>
+    <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+    <main class="workspace">
+      <section class="catalog-panel panel">
+        <div class="toolbar">
+          <div class="toolbar-filters" role="search">
+            <input id="search" class="input search" type="search" placeholder="搜索 ID、名称或材质">
+            <select id="tag-filter" class="select" aria-label="标签"><option value="">全部标签</option></select>
+          </div>
+          <div class="toolbar-selection" role="group" aria-label="批量操作">
+            <button id="select-all" class="button secondary" type="button">全选</button>
+            <button id="bulk-delete" class="button danger" type="button" disabled>批量删除</button>
+            <span id="selection-count" class="selection-count">已选 0 项</span>
+          </div>
+          <div class="toolbar-actions" role="group" aria-label="物品操作">
+            <button id="new-item" class="button secondary">新建物品</button>
+            <button id="import-items" class="button secondary">导入</button>
+            <button id="manage-taxonomy" class="button secondary">管理标签</button>
+          </div>
+          <input id="import-files" type="file" accept=".yml,.yaml,text/yaml,application/x-yaml" multiple hidden>
+        </div>
+        <div class="table-head"><span>物品</span><span>标签</span><span>材质</span><span>操作</span></div>
+        <div class="catalog-content">
+          <div id="items" class="item-list"></div>
+          <div id="empty" class="empty hidden">没有匹配的物品</div>
+        </div>
+        <div class="pager">
+          <button id="previous" class="button secondary">上一页</button>
+          <span id="page-label">第 1 页</span>
+          <button id="next" class="button secondary">下一页</button>
+        </div>
+      </section>
+
+      <aside class="editor panel" aria-label="MM 物品编辑面板">
+        <div class="editor-head">
+          <div><span class="eyebrow">EDITOR</span><h1 id="editor-title">编辑器</h1></div>
+          <span id="editor-source" class="hint"></span>
+        </div>
+
+        <div id="editor-empty" class="editor-empty">请选择一个物品。</div>
+
+        <div id="editor-content" class="editor-content hidden">
+          <div class="editor-preview">
+          <span class="editor-preview-label">物品预览</span>
+          <div class="editor-preview-body">
+            <span id="preview-icon" class="item-icon missing"><span class="icon-fallback">MM</span></span>
+            <div class="editor-preview-copy">
+              <div id="preview-name" class="editor-preview-name">请选择物品</div>
+              <div id="preview-lore" class="editor-preview-lore"></div>
+            </div>
+          </div>
+          </div>
+
+          <div class="form" id="item-form">
+          <div class="form-row">
+            <label class="full-field">内部名<input id="internal-name" class="input" autocomplete="off"></label>
+          </div>
+
+          <div class="rich-field">
+            <div class="field-label">显示名称</div>
+            <div class="rich-toolbar" data-toolbar="display-editor">
+              <button class="rich-tool rich-color rich-color-black" data-code="&0">黑</button>
+              <button class="rich-tool rich-color rich-color-dark-blue" data-code="&1">深蓝</button>
+              <button class="rich-tool rich-color rich-color-dark-green" data-code="&2">深绿</button>
+              <button class="rich-tool rich-color rich-color-dark-aqua" data-code="&3">深青</button>
+              <button class="rich-tool rich-color rich-color-dark-red" data-code="&4">深红</button>
+              <button class="rich-tool rich-color rich-color-dark-purple" data-code="&5">深紫</button>
+              <button class="rich-tool rich-color rich-color-gold" data-code="&6">金</button>
+              <button class="rich-tool rich-color rich-color-gray" data-code="&7">灰</button>
+              <button class="rich-tool rich-color rich-color-blue" data-code="&9">蓝</button>
+              <button class="rich-tool rich-color rich-color-green" data-code="&a">绿</button>
+              <button class="rich-tool rich-color rich-color-aqua" data-code="&b">青</button>
+              <button class="rich-tool rich-color rich-color-red" data-code="&c">红</button>
+              <button class="rich-tool rich-color rich-color-light-purple" data-code="&d">淡紫</button>
+              <button class="rich-tool rich-color rich-color-yellow" data-code="&e">黄</button>
+              <button class="rich-tool rich-color rich-color-white" data-code="&f">白</button>
+              <span class="rich-separator"></span>
+              <button class="rich-tool" data-code="&l"><strong>粗</strong></button>
+              <button class="rich-tool" data-code="&m"><s>删</s></button>
+              <button class="rich-tool" data-code="&n"><u>下</u></button>
+              <button class="rich-tool" data-code="&o"><i>斜</i></button>
+              <button class="rich-tool" data-code="&r">清</button>
+            </div>
+            <div id="display-editor" class="rich-editor" contenteditable="true" spellcheck="false"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="material-field">
+              <div class="field-label">材质</div>
+              <div class="material-picker">
+                <button id="material-trigger" class="material-trigger" type="button" aria-expanded="false">
+                  <span id="material-current-icon" class="material-current-icon"></span>
+                  <span class="material-current-copy"><strong id="material-current-name">石头</strong></span>
+                  <span class="material-chevron">⌄</span>
+                </button>
+                <div id="material-menu" class="material-menu hidden">
+                  <input id="material-search" class="input" type="search" placeholder="搜索材质或中文名">
+                  <div id="material-count" class="material-count"></div>
+                  <div id="material-options" class="material-options"></div>
+                </div>
+              </div>
+            </div>
+            <label>数据值<input id="material-data" class="input" type="number" min="0" max="32767" value="0"></label>
+          </div>
+
+          <div class="form-row">
+            <label>默认数量<input id="item-amount" class="input" type="number" min="1" max="64" value="1"></label>
+            <label>耐久 / Durability<input id="item-durability" class="input" type="number" min="0" max="32767" value="0"></label>
+          </div>
+
+          <div class="rich-field">
+            <div class="field-label">Lore</div>
+            <div class="rich-toolbar" data-toolbar="lore-editor">
+              <button class="rich-tool rich-color rich-color-black" data-code="&0">黑</button>
+              <button class="rich-tool rich-color rich-color-dark-blue" data-code="&1">深蓝</button>
+              <button class="rich-tool rich-color rich-color-dark-green" data-code="&2">深绿</button>
+              <button class="rich-tool rich-color rich-color-dark-aqua" data-code="&3">深青</button>
+              <button class="rich-tool rich-color rich-color-dark-red" data-code="&4">深红</button>
+              <button class="rich-tool rich-color rich-color-dark-purple" data-code="&5">深紫</button>
+              <button class="rich-tool rich-color rich-color-gold" data-code="&6">金</button>
+              <button class="rich-tool rich-color rich-color-gray" data-code="&7">灰</button>
+              <button class="rich-tool rich-color rich-color-blue" data-code="&9">蓝</button>
+              <button class="rich-tool rich-color rich-color-green" data-code="&a">绿</button>
+              <button class="rich-tool rich-color rich-color-aqua" data-code="&b">青</button>
+              <button class="rich-tool rich-color rich-color-red" data-code="&c">红</button>
+              <button class="rich-tool rich-color rich-color-light-purple" data-code="&d">淡紫</button>
+              <button class="rich-tool rich-color rich-color-yellow" data-code="&e">黄</button>
+              <button class="rich-tool rich-color rich-color-white" data-code="&f">白</button>
+              <span class="rich-separator"></span>
+              <button class="rich-tool" data-code="&l"><strong>粗</strong></button>
+              <button class="rich-tool" data-code="&m"><s>删</s></button>
+              <button class="rich-tool" data-code="&n"><u>下</u></button>
+              <button class="rich-tool" data-code="&o"><i>斜</i></button>
+              <button class="rich-tool" data-code="&r">清</button>
+            </div>
+            <div id="lore-editor" class="rich-editor rich-editor-lore" contenteditable="true" spellcheck="false"></div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-head"><span>附魔</span><span id="enchantment-count" class="hint"></span></div>
+            <input id="enchantment-search" class="input" type="search" placeholder="搜索附魔名称或 ID">
+            <div id="enchantment-options" class="enchantment-options"></div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-head"><span>隐藏属性</span><span id="flag-count" class="hint"></span></div>
+            <div id="flag-options" class="hide-flag-options"></div>
+          </div>
+
+          <label class="tag-summary-field">标签<input id="tag-summary" class="input" disabled placeholder="在下方勾选标签"></label>
+          <div id="tag-options" class="tag-options"></div>
+
+          <div class="form-row advanced-fields">
+            <label>Attributes（JSON）<textarea id="attributes-json" class="textarea compact-json" spellcheck="false" placeholder="{}"></textarea></label>
+            <label>Options（JSON）<textarea id="options-json" class="textarea compact-json" spellcheck="false" placeholder="{}"></textarea></label>
+          </div>
+          <label class="advanced-nbt">NBT（JSON）<textarea id="nbt-json" class="textarea compact-json" spellcheck="false" placeholder="{}"></textarea></label>
+
+          <details class="advanced-config">
+            <summary>高级配置树（JSON）</summary>
+            <textarea id="configuration" class="textarea" spellcheck="false" placeholder='{"Id":"STONE","Display":"示例物品"}'></textarea>
+          </details>
+          <details>
+            <summary>原始 YAML 快照</summary>
+            <pre id="raw-yaml" class="yaml-snapshot"></pre>
+          </details>
+
+          <div class="form-actions">
+            <button id="save" class="button primary">保存到 MM</button>
+            <button id="delete" class="button danger">删除</button>
+            <span id="form-message" class="form-message"></span>
+          </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="taxonomy-dialog" class="dialog tag-dialog">
+    <form method="dialog" id="taxonomy-form">
+      <div class="dialog-head"><strong>管理标签</strong><button class="icon-button" value="cancel" aria-label="关闭">×</button></div>
+      <section id="taxonomy-list-section" class="taxonomy-list-section">
+        <div class="section-head"><span>标签</span><button id="new-tag" class="button primary" type="button">新建标签</button></div>
+        <div id="tag-list" class="tag-list"></div>
+        <div id="tag-empty" class="taxonomy-empty hidden">暂无标签</div>
+        <div id="tag-pager" class="tag-pager">
+          <button id="tag-previous" class="button secondary" type="button">上一页</button>
+          <span id="tag-page-label" class="hint">第 1 页</span>
+          <button id="tag-next" class="button secondary" type="button">下一页</button>
+        </div>
+      </section>
+      <div id="taxonomy-editor" class="tag-editor hidden">
+        <label>标签显示名称<input id="taxonomy-display" class="input" placeholder="例如：武器"></label>
+        <div class="field-label">标签颜色</div>
+        <div id="taxonomy-color-toolbar" class="rich-toolbar tag-color-toolbar" aria-label="标签颜色"></div>
+        <span id="taxonomy-color-preview" class="tag item-tag tag-color-preview">标签预览</span>
+        <div class="form-actions"><button id="taxonomy-save" class="button primary" type="button">保存</button><button id="taxonomy-cancel" class="button secondary" type="button">取消</button></div>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="import-dialog" class="dialog import-dialog">
+    <form method="dialog" id="import-form">
+      <div class="dialog-head"><strong>批量导入 MM 物品</strong><button class="icon-button" value="cancel" aria-label="关闭">×</button></div>
+      <div id="import-state" class="import-state">正在识别 YAML 文件…</div>
+      <div id="import-summary" class="import-summary"></div>
+      <div id="import-file-list" class="import-file-list"></div>
+      <div class="form-actions">
+        <button id="import-confirm" class="button primary" type="button" disabled>确认导入</button>
+        <button id="import-cancel" class="button secondary" value="cancel" type="submit">取消</button>
+      </div>
+    </form>
+  </dialog>
+  <script src="/web/app.js"></script>
+</body>
+</html>
