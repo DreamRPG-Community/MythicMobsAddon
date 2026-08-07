@@ -5,12 +5,12 @@ package cn.mythicland.mythicmobsaddon.api;
  *
  * @param searchText case-insensitive text matched against internal name, display name, and
  *                   material
- * @param source source filter
- * @param status status filter, or null for all statuses
- * @param page zero-based page
- * @param pageSize page size
- * @param sort fixed tag-then-material sort key
- * @param tagId optional tag filter
+ * @param source     source filter
+ * @param status     status filter, or null for all statuses
+ * @param page       zero-based page
+ * @param pageSize   page size
+ * @param sort       fixed tag-then-material sort key
+ * @param tagId      optional tag filter
  */
 public record MythicItemQuery(
         String searchText,
@@ -47,6 +47,14 @@ public record MythicItemQuery(
      * @return default query
      */
     public static MythicItemQuery defaults() {
-        return new MythicItemQuery("", MythicItemSource.ALL, null, 0, 50, MythicItemSort.TAG_THEN_MATERIAL, "");
+        return new MythicItemQuery(
+                "",
+                MythicItemSource.ALL,
+                null,
+                0,
+                50,
+                MythicItemSort.TAG_THEN_MATERIAL,
+                ""
+        );
     }
 }

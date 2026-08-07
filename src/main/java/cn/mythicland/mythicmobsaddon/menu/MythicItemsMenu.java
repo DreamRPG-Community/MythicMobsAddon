@@ -63,9 +63,7 @@ public final class MythicItemsMenu implements MenuView {
 
     @Override
     public String title(Player player) {
-        int page = pages.getOrDefault(player.getUniqueId(), 0);
-        MythicItemPage result = page(page, selectedTag(player.getUniqueId()));
-        return ChatColor.DARK_GRAY + "MythicMobsAddon · MM物品 " + (result.page() + 1) + "/" + pageCount(result);
+        return ChatColor.DARK_GRAY + "MythicMobsAddon · MM物品";
     }
 
     @Override
@@ -149,7 +147,8 @@ public final class MythicItemsMenu implements MenuView {
     private ItemStack categoryButton(int categoryIndex, MythicItemPage result) {
         List<MythicItemTag> tags = service.taxonomy().tags();
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.GRAY + "共" + result.total() + "个物品");
+        lore.add(ChatColor.GRAY + "第" + (result.page() + 1) + "/" + pageCount(result)
+                + "页 · 共" + result.total() + "个物品");
         lore.add("");
         lore.add(categoryLine(0, categoryIndex, "全部物品"));
         for (int index = 0; index < tags.size(); index++) {
