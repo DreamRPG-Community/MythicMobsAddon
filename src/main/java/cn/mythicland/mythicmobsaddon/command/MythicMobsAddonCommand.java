@@ -1,55 +1,51 @@
 package cn.mythicland.mythicmobsaddon.command;
 
-import cn.mythicland.lib.command.CommandUsageException;
-import cn.mythicland.lib.command.Subcommand;
+import cn.mythicland.lib.bootstrap.annotation.CommandComponent;
+import cn.mythicland.lib.bootstrap.annotation.CommandHandler;
+import cn.mythicland.lib.command.CommandContext;
 import cn.mythicland.lib.menu.MenuService;
+import cn.mythicland.mythicmobsaddon.MythicMobsAddonPlugin;
 import cn.mythicland.mythicmobsaddon.menu.MythicItemsMenu;
 import cn.mythicland.mythicmobsaddon.service.MythicItemService;
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.List;
+import java.util.Objects;
 
-/** Command nodes for the full MythicMobsAddon command. */
+/**
+ * Handles the MythicMobsAddon command.
+ */
+@CommandComponent("mythicmobsaddon")
 public final class MythicMobsAddonCommand {
 
-    private static final String DISPLAY_NAME = "MythicMobsAddon";
-    private static final String ROOT = "/mythicmobsaddon";
-    private static final String PERMISSION = "mythicmobsaddon.admin";
+    private static final String ADMIN_PERMISSION = "mythicmobsaddon.admin";
 
-    private MythicMobsAddonCommand() {
+    private final MythicItemService service;
+    private final MythicItemsMenu menu;
+    private final MenuService menuService;
+
+    public MythicMobsAddonCommand(MythicItemService service, MenuService menuService) {
+        this.service = Objects.requireNonNull(service, "service");
+        this.menu = new MythicItemsMenu(service);
+        this.menuService = Objects.requireNonNull(menuService, "menuService");
     }
 
-    public static Subcommand items(MythicItemsMenu menu, MenuService menuService) {
-        return new Simple("items", ROOT + " items", "", (sender, arguments) -> {
-            if (!arguments.isEmpty()) throw new CommandUsageException(ROOT + " items");
-            if (!(sender instanceof Player player)) {
-                sender.sendMessage(ChatColor.RED + "只有玩家可以打开 MythicMobsAddon 物品目录。");
-                return;
-            }
-            menu.open(player, menuService);
-        });
-    }
-
-    public static Subcommand reload(MythicItemService service) {
-        return new Simple("reload", ROOT + " reload", PERMISSION, (sender, arguments) -> {
-            if (!arguments.isEmpty()) throw new CommandUsageException(ROOT + " reload");
-            var result = service.reload();
-            sender.sendMessage((result.success() ? ChatColor.GREEN : ChatColor.RED)
-                    + DISPLAY_NAME + (result.success() ? " 已重新加载 MythicMobs 物品。" : " 加载失败: " + result.message()));
-        });
-    }
-
-    private record Simple(String name, String usage, String permission, Action action) implements Subcommand {
-        @Override
-        public void execute(CommandSender sender, List<String> arguments) {
-            action.execute(sender, arguments);
+    @CommandHandler(value = "items")
+    void items(CommandContext context) {
+        context.requireArguments(0);
+        if (!(context.sender() instanceof Player player)) {
+            context.sender().sendMessage(ChatColor.RED + "只有玩家可以打开 MythicMobsAddon 物品目录。");
+            return;
         }
+        menu.open(player, menuService);
     }
 
-    @FunctionalInterface
-    private interface Action {
-        void execute(CommandSender sender, List<String> arguments);
+    @CommandHandler(value = "reload", permission = ADMIN_PERMISSION)
+    void reload(CommandContext context) {
+        context.requireArguments(0);
+        var result = service.reload();
+        context.sender().sendMessage((result.success() ? ChatColor.GREEN : ChatColor.RED)
+                + MythicMobsAddonPlugin.DISPLAY_NAME
+                + (result.success() ? " 已重新加载 MythicMobs 物品。" : " 加载失败: " + result.message()));
     }
 }

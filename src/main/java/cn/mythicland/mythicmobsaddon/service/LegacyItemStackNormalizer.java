@@ -124,6 +124,7 @@ final class LegacyItemStackNormalizer {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static Boolean booleanValue(Map<?, ?> source, String... keys) {
         Object value = value(source, keys);
         if (value instanceof Boolean booleanValue) return booleanValue;

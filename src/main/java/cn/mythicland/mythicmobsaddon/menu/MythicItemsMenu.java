@@ -2,6 +2,8 @@ package cn.mythicland.mythicmobsaddon.menu;
 
 import cn.mythicland.lib.menu.MenuService;
 import cn.mythicland.lib.menu.MenuView;
+import cn.mythicland.lib.menu.MenuItems;
+import cn.mythicland.lib.menu.MenuSelection;
 import cn.mythicland.lib.menu.PageWindow;
 import cn.mythicland.mythicmobsaddon.api.*;
 import cn.mythicland.mythicmobsaddon.service.MythicItemService;
@@ -12,7 +14,6 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
@@ -34,25 +35,12 @@ public final class MythicItemsMenu implements MenuView {
         this.service = service;
     }
 
-    private static String categoryLine(int index, int selectedIndex, String name) {
-        return index == selectedIndex
-                ? ChatColor.GREEN + "▶ " + name
-                : ChatColor.GRAY + "  " + name;
-    }
-
     private static ItemStack named(Material material, String name, String lore) {
         return named(material, name, List.of(lore));
     }
 
     private static ItemStack named(Material material, String name, List<String> lore) {
-        ItemStack stack = new ItemStack(material);
-        ItemMeta meta = stack.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(name);
-            meta.setLore(lore);
-            stack.setItemMeta(meta);
-        }
-        return stack;
+        return MenuItems.button(material, name, lore);
     }
 
     public void open(Player player, MenuService menuService) {
@@ -96,11 +84,12 @@ public final class MythicItemsMenu implements MenuView {
     public void handleClick(Player player, InventoryClickEvent event, MenuService menuService) {
         int slot = event.getRawSlot();
         int page = pages.getOrDefault(player.getUniqueId(), 0);
-        if (slot == INFO_SLOT && (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT)) {
-            int direction = event.getClick() == ClickType.LEFT ? 1 : -1;
+        if (slot == INFO_SLOT && MenuSelection.isCycleClick(event.getClick())) {
+            int direction = MenuSelection.direction(event.getClick());
             int nextIndex = Math.floorMod(categoryIndex(player.getUniqueId()) + direction, categoryCount());
             categoryIndexes.put(player.getUniqueId(), nextIndex);
             pages.put(player.getUniqueId(), 0);
+            MenuSelection.playClickSound(player);
             menuService.refresh(player);
             return;
         }
@@ -150,9 +139,9 @@ public final class MythicItemsMenu implements MenuView {
         lore.add(ChatColor.GRAY + "第" + (result.page() + 1) + "/" + pageCount(result)
                 + "页 · 共" + result.total() + "个物品");
         lore.add("");
-        lore.add(categoryLine(0, categoryIndex, "全部物品"));
+        lore.add(MenuSelection.optionLine("全部物品", categoryIndex == 0));
         for (int index = 0; index < tags.size(); index++) {
-            lore.add(categoryLine(index + 1, categoryIndex, tags.get(index).displayName()));
+            lore.add(MenuSelection.optionLine(tags.get(index).displayName(), index + 1 == categoryIndex));
         }
         lore.add("");
         lore.add(ChatColor.YELLOW + "点击切换");

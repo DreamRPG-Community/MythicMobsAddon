@@ -1,6 +1,7 @@
 package cn.mythicland.mythicmobsaddon.service;
 
 import cn.mythicland.lib.api.LibApi;
+import cn.mythicland.lib.bootstrap.annotation.ServiceComponent;
 import cn.mythicland.lib.menu.PageWindow;
 import cn.mythicland.lib.path.ManagedPathResolver;
 import cn.mythicland.lib.storage.AtomicYamlTransaction;
@@ -28,6 +29,7 @@ import cn.mythicland.mythicmobsaddon.api.MythicItemUpdateRequest;
 import cn.mythicland.mythicmobsaddon.api.MythicItemWriteResult;
 import cn.mythicland.mythicmobsaddon.api.MythicItemsReloadResult;
 import cn.mythicland.mythicmobsaddon.api.MythicMobsAddonApi;
+import cn.mythicland.mythicmobsaddon.MythicMobsAddonPlugin;
 import io.lumine.xikage.mythicmobs.MythicMobs;
 import io.lumine.xikage.mythicmobs.items.ItemManager;
 import io.lumine.xikage.mythicmobs.items.MythicItem;
@@ -36,6 +38,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -70,6 +73,7 @@ import java.util.stream.Stream;
  * MM item domain service. MythicMobs ItemManager and the original Items YAML files remain the
  * source of truth; tags are the only addon-owned sidecar metadata.
  */
+@ServiceComponent(MythicMobsAddonApi.class)
 public final class MythicItemService implements MythicMobsAddonApi {
 
     private static final Pattern ITEM_NAME = Pattern.compile("[A-Za-z0-9_\\-\\u4e00-\\u9fff]{1,64}");
@@ -99,19 +103,26 @@ public final class MythicItemService implements MythicMobsAddonApi {
     private String itemFingerprint = "";
     private String pendingFingerprint = "";
 
-    public MythicItemService(
-            JavaPlugin plugin,
-            LibApi lib,
-            MythicMobs mythicMobs
-    ) {
+    public MythicItemService(MythicMobsAddonPlugin plugin, LibApi lib) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.lib = Objects.requireNonNull(lib, "lib");
-        this.mythicMobs = Objects.requireNonNull(mythicMobs, "mythicMobs");
+        this.mythicMobs = requireMythicMobs(plugin);
         this.itemManager = mythicMobs.getItemManager();
         Path itemsRoot = mythicMobs.getDataFolder().toPath().resolve("Items");
         this.itemsPath = lib.pathService().managed(itemsRoot);
         this.managedFile = itemsPath.resolve("MythicMobsAddon/items.yml");
         this.taxonomyFile = plugin.getDataFolder().toPath().resolve("tags.yml");
+    }
+
+    private static MythicMobs requireMythicMobs(MythicMobsAddonPlugin plugin) {
+        Plugin dependency = Objects.requireNonNull(plugin, "plugin")
+                .getServer()
+                .getPluginManager()
+                .getPlugin("MythicMobs");
+        if (!(dependency instanceof MythicMobs mythicMobs)) {
+            throw new IllegalStateException("MythicMobs is not enabled");
+        }
+        return mythicMobs;
     }
 
     public Path managedFile() {
@@ -569,6 +580,7 @@ public final class MythicItemService implements MythicMobsAddonApi {
         }
     }
 
+    @SuppressWarnings("VulnerableCodeUsages")
     private ImportAnalysis analyzeImport(MythicItemImportRequest request) {
         List<MythicItemImportCandidate> candidates = new ArrayList<>();
         List<ParsedImportItem> items = new ArrayList<>();

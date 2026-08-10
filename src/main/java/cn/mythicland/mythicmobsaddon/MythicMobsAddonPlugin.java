@@ -24,6 +24,7 @@ public final class MythicMobsAddonPlugin extends JavaPlugin {
      * Starts the Lib-managed MythicMobsAddon component graph.
      */
     @Override
+    @SuppressWarnings("resource")
     public void onEnable() {
         try {
             LibApi lib = LibApi.require(this);
