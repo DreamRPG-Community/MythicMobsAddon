@@ -1,10 +1,6 @@
 package cn.mythicland.mythicmobsaddon.menu;
 
-import cn.mythicland.lib.menu.MenuService;
-import cn.mythicland.lib.menu.MenuView;
-import cn.mythicland.lib.menu.MenuItems;
-import cn.mythicland.lib.menu.MenuSelection;
-import cn.mythicland.lib.menu.PageWindow;
+import cn.mythicland.lib.menu.*;
 import cn.mythicland.mythicmobsaddon.api.*;
 import cn.mythicland.mythicmobsaddon.service.MythicItemService;
 import org.bukkit.ChatColor;

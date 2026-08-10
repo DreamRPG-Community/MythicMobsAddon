@@ -1,6 +1,8 @@
 package cn.mythicland.mythicmobsaddon.api;
 
-/** Result status for a MythicMobs item library mutation. */
+/**
+ * Result status for a MythicMobs item library mutation.
+ */
 public enum MythicItemMutationStatus {
     CREATED,
     UPDATED,

@@ -1,6 +1,8 @@
 package cn.mythicland.mythicmobsaddon.api;
 
-/** Result of reloading the MythicMobs item manager. */
+/**
+ * Result of reloading the MythicMobs item manager.
+ */
 public record MythicItemsReloadResult(
         boolean success,
         int itemCount,

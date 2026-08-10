@@ -1,6 +1,8 @@
 package cn.mythicland.mythicmobsaddon.api;
 
-/** One MM item recognized in an uploaded YAML file. */
+/**
+ * One MM item recognized in an uploaded YAML file.
+ */
 public record MythicItemImportCandidate(String internalName, String fileName, String format) {
 
     public MythicItemImportCandidate {

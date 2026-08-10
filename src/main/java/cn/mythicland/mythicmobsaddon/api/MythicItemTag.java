@@ -1,6 +1,8 @@
 package cn.mythicland.mythicmobsaddon.api;
 
-/** Addon-owned multi-select item tag. */
+/**
+ * Addon-owned multi-select item tag.
+ */
 public record MythicItemTag(String id, String displayName, String color) {
     public MythicItemTag {
         id = requireId(id);

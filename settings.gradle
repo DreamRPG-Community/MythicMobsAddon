@@ -28,4 +28,10 @@ includeBuild("../Lib") {
     }
 }
 
+includeBuild("../DreamRPG") {
+    dependencySubstitution {
+        substitute module("self-written:DreamRPG") using project(":")
+    }
+}
+
 rootProject.name = "MythicMobsAddon"

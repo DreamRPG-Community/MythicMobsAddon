@@ -7,7 +7,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 
-/** Lifecycle wrapper for the MythicMobsAddon web service. */
+/**
+ * Lifecycle wrapper for the MythicMobsAddon web service.
+ */
 public final class MythicMobsAddonWebServer implements AutoCloseable {
 
     private final JavaPlugin plugin;

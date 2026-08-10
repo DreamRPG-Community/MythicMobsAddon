@@ -4,7 +4,9 @@ import cn.mythicland.lib.storage.YamlTree;
 
 import java.util.Map;
 
-/** Request to replace one MythicMobs item library configuration. */
+/**
+ * Request to replace one MythicMobs item library configuration.
+ */
 public record MythicItemUpdateRequest(
         String internalName,
         String newInternalName,

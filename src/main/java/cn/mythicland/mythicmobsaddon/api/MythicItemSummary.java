@@ -7,13 +7,13 @@ import java.util.List;
  *
  * @param internalName MM internal identifier
  * @param relativeFile source file relative to MythicMobs/Items
- * @param managed whether the entry is in MythicMobsAddon's MM item file
- * @param status runtime status
- * @param displayName resolved display name
+ * @param managed      whether the entry is in MythicMobsAddon's MM item file
+ * @param status       runtime status
+ * @param displayName  resolved display name
  * @param materialName resolved material name
- * @param amount default amount
- * @param warnings diagnostic warnings
- * @param revision content revision
+ * @param amount       default amount
+ * @param warnings     diagnostic warnings
+ * @param revision     content revision
  */
 public record MythicItemSummary(
         String internalName,
@@ -57,7 +57,8 @@ public record MythicItemSummary(
     }
 
     public MythicItemSummary {
-        if (internalName == null || internalName.isBlank()) throw new IllegalArgumentException("internalName is required");
+        if (internalName == null || internalName.isBlank())
+            throw new IllegalArgumentException("internalName is required");
         relativeFile = relativeFile == null ? "" : relativeFile;
         status = status == null ? MythicItemStatus.MISSING : status;
         displayName = displayName == null ? internalName : displayName;

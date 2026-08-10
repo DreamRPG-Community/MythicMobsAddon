@@ -3,7 +3,7 @@ version: ${version}
 main: cn.mythicland.mythicmobsaddon.MythicMobsAddonPlugin
 author: MythicMobsAddon Maintainers
 load: POSTWORLD
-depend: [Lib, MythicMobs]
+depend: [Lib, MythicMobs, DreamRPG]
 description: MythicMobs item management addon.
 commands:
   mythicmobsaddon:

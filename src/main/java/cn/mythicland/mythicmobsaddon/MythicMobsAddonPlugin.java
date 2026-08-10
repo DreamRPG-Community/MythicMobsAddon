@@ -4,6 +4,7 @@ import cn.mythicland.lib.api.LibApi;
 import cn.mythicland.lib.bootstrap.PluginBootstrap;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Objects;
 import java.util.logging.Level;
 
 /**
@@ -47,5 +48,12 @@ public final class MythicMobsAddonPlugin extends JavaPlugin {
     public void onDisable() {
         if (bootstrap != null) bootstrap.disable();
         bootstrap = null;
+    }
+
+    /**
+     * Reloads the Lib configuration snapshot and MythicMobsAddon lifecycle.
+     */
+    public void reloadMythicMobsAddon() {
+        Objects.requireNonNull(bootstrap, "MythicMobsAddon bootstrap is unavailable").reload();
     }
 }

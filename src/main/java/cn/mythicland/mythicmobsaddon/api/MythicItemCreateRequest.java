@@ -4,7 +4,9 @@ import cn.mythicland.lib.storage.YamlTree;
 
 import java.util.Map;
 
-/** Request to create one item in the MythicMobs item library. */
+/**
+ * Request to create one item in the MythicMobs item library.
+ */
 public record MythicItemCreateRequest(
         String internalName,
         Map<String, Object> configuration,

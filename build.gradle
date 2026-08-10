@@ -42,6 +42,7 @@ def paperApiVersion = "1.12.2-R0.1-20190714.184133-413"
 dependencies {
     compileOnly("com.destroystokyo.paper:paper-api:${paperApiVersion}")
     compileOnly("self-written:Lib:1.0.0")
+    compileOnly("self-written:DreamRPG:1.0.0")
     compileOnly("io.lumine.xikage:MythicMobs:4.12.0")
     compileOnly("org.yaml:snakeyaml:1.19")
 

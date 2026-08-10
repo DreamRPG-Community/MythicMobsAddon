@@ -20,11 +20,17 @@ public final class MythicMobsAddonCommand {
 
     private static final String ADMIN_PERMISSION = "mythicmobsaddon.admin";
 
+    private final MythicMobsAddonPlugin plugin;
     private final MythicItemService service;
     private final MythicItemsMenu menu;
     private final MenuService menuService;
 
-    public MythicMobsAddonCommand(MythicItemService service, MenuService menuService) {
+    public MythicMobsAddonCommand(
+            MythicMobsAddonPlugin plugin,
+            MythicItemService service,
+            MenuService menuService
+    ) {
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.service = Objects.requireNonNull(service, "service");
         this.menu = new MythicItemsMenu(service);
         this.menuService = Objects.requireNonNull(menuService, "menuService");
@@ -43,6 +49,7 @@ public final class MythicMobsAddonCommand {
     @CommandHandler(value = "reload", permission = ADMIN_PERMISSION)
     void reload(CommandContext context) {
         context.requireArguments(0);
+        plugin.reloadMythicMobsAddon();
         var result = service.reload();
         context.sender().sendMessage((result.success() ? ChatColor.GREEN : ChatColor.RED)
                 + MythicMobsAddonPlugin.DISPLAY_NAME

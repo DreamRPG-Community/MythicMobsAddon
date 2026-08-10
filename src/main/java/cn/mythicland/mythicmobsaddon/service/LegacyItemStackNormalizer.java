@@ -2,11 +2,7 @@ package cn.mythicland.mythicmobsaddon.service;
 
 import cn.mythicland.lib.storage.YamlTree;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.UnaryOperator;
 
 /**

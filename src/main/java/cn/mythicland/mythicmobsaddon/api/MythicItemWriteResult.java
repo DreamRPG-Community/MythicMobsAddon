@@ -2,7 +2,9 @@ package cn.mythicland.mythicmobsaddon.api;
 
 import java.util.List;
 
-/** Result of a MythicMobs item write operation. */
+/**
+ * Result of a MythicMobs item write operation.
+ */
 public record MythicItemWriteResult(
         MythicItemMutationStatus status,
         String internalName,

@@ -2,7 +2,9 @@ package cn.mythicland.mythicmobsaddon.api;
 
 import java.util.List;
 
-/** Immutable result of MM item import analysis or commit. */
+/**
+ * Immutable result of MM item import analysis or commit.
+ */
 public record MythicItemImportResult(
         MythicItemImportStatus status,
         String message,

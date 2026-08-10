@@ -2,7 +2,9 @@ package cn.mythicland.mythicmobsaddon.api;
 
 import java.util.List;
 
-/** Paged immutable MythicMobs item result. */
+/**
+ * Paged immutable MythicMobs item result.
+ */
 public record MythicItemPage(
         List<MythicItemSummary> items,
         int page,

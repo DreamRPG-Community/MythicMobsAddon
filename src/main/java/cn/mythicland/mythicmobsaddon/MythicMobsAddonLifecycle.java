@@ -5,13 +5,11 @@ import cn.mythicland.lib.bootstrap.LibPluginLifecycle;
 import cn.mythicland.lib.bootstrap.PluginTaskScope;
 import cn.mythicland.lib.bootstrap.annotation.LifecycleComponent;
 import cn.mythicland.lib.bootstrap.annotation.ListenerComponent;
-import cn.mythicland.lib.config.ConfigSupport;
 import cn.mythicland.mythicmobsaddon.api.MythicItemQuery;
 import cn.mythicland.mythicmobsaddon.service.MythicItemService;
 import cn.mythicland.mythicmobsaddon.web.MythicMobsAddonWebServer;
 import io.lumine.xikage.mythicmobs.MythicMobs;
 import io.lumine.xikage.mythicmobs.api.bukkit.events.MythicReloadedEvent;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitTask;
@@ -32,6 +30,7 @@ public final class MythicMobsAddonLifecycle implements LibPluginLifecycle, Liste
     private final LibApi lib;
     private final PluginTaskScope tasks;
     private final MythicItemService itemService;
+    private final MythicMobsAddonConfiguration configuration;
     private MythicMobs mythicMobs;
     private MythicMobsAddonWebServer webServer;
     private BukkitTask itemRefreshTask;
@@ -39,21 +38,29 @@ public final class MythicMobsAddonLifecycle implements LibPluginLifecycle, Liste
     /**
      * Creates the lifecycle module from Lib-provided dependencies.
      *
-     * @param plugin plugin entry point
-     * @param lib shared Lib service
-     * @param tasks plugin-owned task scope
+     * @param plugin      plugin entry point
+     * @param lib         shared Lib service
+     * @param tasks       plugin-owned task scope
      * @param itemService injected Mythic item service
      */
     public MythicMobsAddonLifecycle(
             MythicMobsAddonPlugin plugin,
             LibApi lib,
             PluginTaskScope tasks,
-            MythicItemService itemService
+            MythicItemService itemService,
+            MythicMobsAddonConfiguration configuration
     ) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.lib = Objects.requireNonNull(lib, "lib");
         this.tasks = Objects.requireNonNull(tasks, "tasks");
         this.itemService = Objects.requireNonNull(itemService, "itemService");
+        this.configuration = Objects.requireNonNull(configuration, "configuration");
+    }
+
+    private static String generateToken() {
+        byte[] bytes = new byte[24];
+        new SecureRandom().nextBytes(bytes);
+        return HexFormat.of().formatHex(bytes);
     }
 
     /**
@@ -81,6 +88,7 @@ public final class MythicMobsAddonLifecycle implements LibPluginLifecycle, Liste
      */
     @Override
     public void reload() {
+        configureWeb();
         Objects.requireNonNull(itemService, "MythicMobsAddon item service is unavailable")
                 .refreshAfterMythicReload();
     }
@@ -112,18 +120,17 @@ public final class MythicMobsAddonLifecycle implements LibPluginLifecycle, Liste
     }
 
     private void configureWeb() {
-        FileConfiguration configuration = ConfigSupport.loadDefault(plugin);
-        if (!configuration.getBoolean("web.enabled", true)) return;
-        String bindAddress = configuration.getString("web.bind-address", "127.0.0.1");
-        if (bindAddress == null || bindAddress.isBlank() || bindAddress.contains(" ")) {
-            bindAddress = "127.0.0.1";
+        MythicMobsAddonConfiguration.Snapshot current = configuration.snapshot();
+        if (!current.enabled()) {
+            Objects.requireNonNull(webServer, "MythicMobsAddon web server is unavailable").close();
+            return;
         }
-        int port = configuration.getInt("web.port", 8765);
-        if (port < 1024 || port > 65535) port = 8765;
-        String token = configuration.getString("web.token", "");
+        String bindAddress = current.bindAddress();
+        int port = current.port();
+        String token = current.token();
         if (token == null || token.isBlank()) {
             token = generateToken();
-            configuration.set("web.token", token);
+            plugin.getConfig().set("web.token", token);
             plugin.saveConfig();
             plugin.getLogger().info(MythicMobsAddonPlugin.DISPLAY_NAME + " generated a web token in config.yml.");
         }
@@ -153,11 +160,5 @@ public final class MythicMobsAddonLifecycle implements LibPluginLifecycle, Liste
             }
             if (plugin.isEnabled()) scheduleItemRefresh();
         });
-    }
-
-    private static String generateToken() {
-        byte[] bytes = new byte[24];
-        new SecureRandom().nextBytes(bytes);
-        return HexFormat.of().formatHex(bytes);
     }
 }

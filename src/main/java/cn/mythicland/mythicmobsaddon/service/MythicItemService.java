@@ -6,30 +6,8 @@ import cn.mythicland.lib.menu.PageWindow;
 import cn.mythicland.lib.path.ManagedPathResolver;
 import cn.mythicland.lib.storage.AtomicYamlTransaction;
 import cn.mythicland.lib.storage.YamlTree;
-import cn.mythicland.mythicmobsaddon.api.MythicItemClassification;
-import cn.mythicland.mythicmobsaddon.api.MythicItemCreateRequest;
-import cn.mythicland.mythicmobsaddon.api.MythicItemDeleteRequest;
-import cn.mythicland.mythicmobsaddon.api.MythicItemDetails;
-import cn.mythicland.mythicmobsaddon.api.MythicItemEditorCatalog;
-import cn.mythicland.mythicmobsaddon.api.MythicItemImportCandidate;
-import cn.mythicland.mythicmobsaddon.api.MythicItemImportFile;
-import cn.mythicland.mythicmobsaddon.api.MythicItemImportRequest;
-import cn.mythicland.mythicmobsaddon.api.MythicItemImportResult;
-import cn.mythicland.mythicmobsaddon.api.MythicItemImportStatus;
-import cn.mythicland.mythicmobsaddon.api.MythicItemMutationStatus;
-import cn.mythicland.mythicmobsaddon.api.MythicItemPage;
-import cn.mythicland.mythicmobsaddon.api.MythicItemQuery;
-import cn.mythicland.mythicmobsaddon.api.MythicItemSort;
-import cn.mythicland.mythicmobsaddon.api.MythicItemSource;
-import cn.mythicland.mythicmobsaddon.api.MythicItemStatus;
-import cn.mythicland.mythicmobsaddon.api.MythicItemSummary;
-import cn.mythicland.mythicmobsaddon.api.MythicItemTag;
-import cn.mythicland.mythicmobsaddon.api.MythicItemTaxonomy;
-import cn.mythicland.mythicmobsaddon.api.MythicItemUpdateRequest;
-import cn.mythicland.mythicmobsaddon.api.MythicItemWriteResult;
-import cn.mythicland.mythicmobsaddon.api.MythicItemsReloadResult;
-import cn.mythicland.mythicmobsaddon.api.MythicMobsAddonApi;
 import cn.mythicland.mythicmobsaddon.MythicMobsAddonPlugin;
+import cn.mythicland.mythicmobsaddon.api.*;
 import io.lumine.xikage.mythicmobs.MythicMobs;
 import io.lumine.xikage.mythicmobs.items.ItemManager;
 import io.lumine.xikage.mythicmobs.items.MythicItem;
@@ -51,19 +29,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HexFormat;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -459,7 +425,9 @@ public final class MythicItemService implements MythicMobsAddonApi {
         return taxonomy();
     }
 
-    /** Refreshes the MM registry after a MythicMobs reload event. */
+    /**
+     * Refreshes the MM registry after a MythicMobs reload event.
+     */
     public void refreshAfterMythicReload() {
         requirePrimaryThread();
         loadTaxonomy();
@@ -468,7 +436,9 @@ public final class MythicItemService implements MythicMobsAddonApi {
         pendingFingerprint = itemFingerprint;
     }
 
-    /** Detects manual changes below MythicMobs/Items and refreshes the registry on the main thread. */
+    /**
+     * Detects manual changes below MythicMobs/Items and refreshes the registry on the main thread.
+     */
     public void refreshIfFilesChanged() {
         requirePrimaryThread();
         String currentFingerprint = currentFingerprint();

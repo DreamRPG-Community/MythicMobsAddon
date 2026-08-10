@@ -1,6 +1,8 @@
 package cn.mythicland.mythicmobsaddon.api;
 
-/** Request to delete one MythicMobs item library configuration. */
+/**
+ * Request to delete one MythicMobs item library configuration.
+ */
 public record MythicItemDeleteRequest(String internalName, String expectedRevision, boolean confirmExternalMutation) {
     /**
      * Compatibility constructor for callers compiled against the initial API shape.

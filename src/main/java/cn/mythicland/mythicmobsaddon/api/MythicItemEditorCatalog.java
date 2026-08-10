@@ -5,7 +5,9 @@ import cn.mythicland.lib.material.MaterialEntry;
 
 import java.util.List;
 
-/** Immutable data required by the browser editor. */
+/**
+ * Immutable data required by the browser editor.
+ */
 public record MythicItemEditorCatalog(
         List<MaterialEntry> materials,
         List<EnchantmentEntry> enchantments,

@@ -5,7 +5,9 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
 
-/** Detailed immutable MM item view. */
+/**
+ * Detailed immutable MM item view.
+ */
 public record MythicItemDetails(
         MythicItemSummary summary,
         Map<String, Object> configuration,

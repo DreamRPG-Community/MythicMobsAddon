@@ -2,7 +2,9 @@ package cn.mythicland.mythicmobsaddon.api;
 
 import java.util.List;
 
-/** Addon-owned tag metadata for one MM item. */
+/**
+ * Addon-owned tag metadata for one MM item.
+ */
 public record MythicItemClassification(List<String> tagIds) {
     public MythicItemClassification {
         tagIds = tagIds == null ? List.of() : tagIds.stream()

@@ -2,7 +2,9 @@ package cn.mythicland.mythicmobsaddon.api;
 
 import java.util.Objects;
 
-/** One local YAML file submitted for MM item import. */
+/**
+ * One local YAML file submitted for MM item import.
+ */
 public record MythicItemImportFile(String fileName, byte[] content) {
 
     public MythicItemImportFile {
