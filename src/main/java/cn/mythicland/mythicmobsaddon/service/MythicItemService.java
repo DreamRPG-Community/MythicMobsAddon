@@ -2,6 +2,8 @@ package cn.mythicland.mythicmobsaddon.service;
 
 import cn.mythicland.lib.api.LibApi;
 import cn.mythicland.lib.bootstrap.annotation.ServiceComponent;
+import cn.mythicland.lib.item.ItemMarker;
+import cn.mythicland.lib.item.ItemMarkerCodec;
 import cn.mythicland.lib.menu.PageWindow;
 import cn.mythicland.lib.path.ManagedPathResolver;
 import cn.mythicland.lib.storage.AtomicYamlTransaction;
@@ -42,6 +44,9 @@ import java.util.stream.Stream;
 @ServiceComponent(MythicMobsAddonApi.class)
 public final class MythicItemService implements MythicMobsAddonApi {
 
+    private static final String IDENTITY_NAMESPACE = "MythicMobsAddon";
+    private static final int IDENTITY_SCHEMA = 1;
+
     private static final Pattern ITEM_NAME = Pattern.compile("[A-Za-z0-9_\\-\\u4e00-\\u9fff]{1,64}");
     private static final Pattern LABEL_NAME = Pattern.compile("[A-Za-z0-9_\\-]{1,48}");
     private static final List<String> REFERENCE_DIRECTORIES = List.of("Mobs", "DropTables", "Skills");
@@ -66,6 +71,7 @@ public final class MythicItemService implements MythicMobsAddonApi {
     private final Map<String, CatalogEntry> catalog = new LinkedHashMap<>();
     private final Map<String, MythicItemClassification> classifications = new LinkedHashMap<>();
     private final Map<String, MythicItemTag> tags = new LinkedHashMap<>();
+    private final ItemMarkerCodec identityCodec;
     private String itemFingerprint = "";
     private String pendingFingerprint = "";
 
@@ -78,6 +84,7 @@ public final class MythicItemService implements MythicMobsAddonApi {
         this.itemsPath = lib.pathService().managed(itemsRoot);
         this.managedFile = itemsPath.resolve("MythicMobsAddon/items.yml");
         this.taxonomyFile = plugin.getDataFolder().toPath().resolve("tags.yml");
+        this.identityCodec = lib.itemMarkerCodec();
     }
 
     private static MythicMobs requireMythicMobs(MythicMobsAddonPlugin plugin) {
@@ -159,7 +166,79 @@ public final class MythicItemService implements MythicMobsAddonApi {
         if (stack == null) throw new MythicItemException("ITEM_STACK_FAILED", "MM 物品无法生成: " + internalName);
         ItemStack copy = stack.clone();
         copy.setAmount(Math.clamp(amount, 1, Math.max(1, copy.getMaxStackSize())));
-        return copy;
+        CatalogEntry entry = catalog.get(item.getInternalName());
+        if (entry == null) throw new MythicItemException("ITEM_NOT_FOUND", "MM 物品目录未注册: " + internalName);
+        return identityCodec.write(
+                copy,
+                new ItemMarker(
+                        IDENTITY_NAMESPACE,
+                        IDENTITY_SCHEMA,
+                        Map.of(
+                                "item-id", item.getInternalName(),
+                                "revision", entry.summary().revision()
+                        )
+                )
+        );
+    }
+
+    @Override
+    public ItemStack materialize(String internalName) {
+        requirePrimaryThread();
+        CatalogEntry entry = catalog.get(Objects.requireNonNull(internalName, "internalName"));
+        if (entry == null) throw new MythicItemException("ITEM_NOT_FOUND", "MM 物品不存在: " + internalName);
+        return getItemStack(entry.item().getInternalName(), Math.clamp(entry.summary().amount(), 1, 64));
+    }
+
+    @Override
+    public Optional<MythicItemIdentity> identify(ItemStack item) {
+        requirePrimaryThread();
+        return identityCodec.read(item, IDENTITY_NAMESPACE)
+                .filter(marker -> marker.schema() == IDENTITY_SCHEMA)
+                .flatMap(this::identity);
+    }
+
+    private Optional<MythicItemIdentity> identity(ItemMarker marker) {
+        String internalName = marker.values().get("item-id");
+        String revision = marker.values().get("revision");
+        if (internalName == null || internalName.isBlank() || revision == null || revision.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(new MythicItemIdentity(internalName, revision));
+        } catch (IllegalArgumentException exception) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public MythicItemRefreshResult refresh(ItemStack item, MythicItemRefreshMode mode) {
+        requirePrimaryThread();
+        Objects.requireNonNull(mode, "mode");
+        Optional<MythicItemIdentity> identity = identify(item);
+        if (identity.isEmpty()) {
+            return new MythicItemRefreshResult(MythicItemRefreshStatus.UNMANAGED, item, item, null);
+        }
+        MythicItemIdentity currentIdentity = identity.orElseThrow();
+        CatalogEntry entry = catalog.get(currentIdentity.internalName());
+        if (entry == null) {
+            return new MythicItemRefreshResult(MythicItemRefreshStatus.STALE, item, item, currentIdentity);
+        }
+        MythicItemIdentity latest = new MythicItemIdentity(
+                entry.item().getInternalName(), entry.summary().revision()
+        );
+        if (latest.revision().equals(currentIdentity.revision())) {
+            return new MythicItemRefreshResult(MythicItemRefreshStatus.CURRENT, item, item, currentIdentity);
+        }
+        ItemStack replacement = getItemStack(
+                entry.item().getInternalName(),
+                Math.clamp(entry.summary().amount(), 1, 64)
+        );
+        if (mode == MythicItemRefreshMode.EXISTING_INSTANCE && item != null) {
+            replacement.setAmount(Math.clamp(item.getAmount(), 1, Math.max(1, replacement.getMaxStackSize())));
+        }
+        return new MythicItemRefreshResult(
+                MythicItemRefreshStatus.UPDATED, item, replacement, latest
+        );
     }
 
     @Override
@@ -308,11 +387,13 @@ public final class MythicItemService implements MythicMobsAddonApi {
     public MythicItemsReloadResult reload() {
         requirePrimaryThread();
         try {
+            Map<String, String> previous = revisionSnapshot();
             itemManager.loadItems();
             loadTaxonomy();
             refreshCatalog();
             itemFingerprint = currentFingerprint();
             pendingFingerprint = itemFingerprint;
+            publishChanges(previous);
             return new MythicItemsReloadResult(true, catalog.size(), generation.get(), "MythicMobs 物品已重新加载");
         } catch (RuntimeException exception) {
             return new MythicItemsReloadResult(false, catalog.size(), generation.get(), exception.getMessage());
@@ -344,6 +425,7 @@ public final class MythicItemService implements MythicMobsAddonApi {
 
         try (AtomicYamlTransaction transaction = lib.storageService().transaction()) {
             YamlConfiguration configuration = loadYaml(managedFile);
+            Map<String, String> previous = revisionSnapshot();
             for (ParsedImportItem item : analysis.items()) {
                 setItem(configuration, item.internalName(), item.configuration());
             }
@@ -356,6 +438,7 @@ public final class MythicItemService implements MythicMobsAddonApi {
             transaction.commit();
             itemFingerprint = currentFingerprint();
             pendingFingerprint = itemFingerprint;
+            publishChanges(previous);
             return importResult(
                     analysis,
                     MythicItemImportStatus.IMPORTED,
@@ -430,10 +513,12 @@ public final class MythicItemService implements MythicMobsAddonApi {
      */
     public void refreshAfterMythicReload() {
         requirePrimaryThread();
+        Map<String, String> previous = revisionSnapshot();
         loadTaxonomy();
         refreshCatalog();
         itemFingerprint = currentFingerprint();
         pendingFingerprint = itemFingerprint;
+        publishChanges(previous);
     }
 
     /**
@@ -447,11 +532,13 @@ public final class MythicItemService implements MythicMobsAddonApi {
             pendingFingerprint = currentFingerprint;
             return;
         }
+        Map<String, String> previous = revisionSnapshot();
         itemManager.loadItems();
         loadTaxonomy();
         refreshCatalog();
         itemFingerprint = currentFingerprint;
         pendingFingerprint = itemFingerprint;
+        publishChanges(previous);
     }
 
     private MythicItemWriteResult writeItem(
@@ -469,6 +556,7 @@ public final class MythicItemService implements MythicMobsAddonApi {
         Map<Path, String> rewrittenReferences = new LinkedHashMap<>();
         try (AtomicYamlTransaction transaction = lib.storageService().transaction()) {
             YamlConfiguration sourceConfiguration = loadYaml(sourceFile);
+            Map<String, String> previous = revisionSnapshot();
             Map<String, MythicItemClassification> nextClassifications = new LinkedHashMap<>(classifications);
             if (mutationStatus == MythicItemMutationStatus.DELETED) {
                 sourceConfiguration.set(oldName, null);
@@ -500,6 +588,7 @@ public final class MythicItemService implements MythicMobsAddonApi {
             transaction.commit();
             itemFingerprint = currentFingerprint();
             pendingFingerprint = itemFingerprint;
+            publishChanges(previous);
 
             CatalogEntry entry = mutationStatus == MythicItemMutationStatus.DELETED ? null : catalog.get(newName);
             String revision = entry == null ? "" : entry.summary().revision();
@@ -963,6 +1052,26 @@ public final class MythicItemService implements MythicMobsAddonApi {
         catalog.clear();
         catalog.putAll(next);
         generation.incrementAndGet();
+    }
+
+    private Map<String, String> revisionSnapshot() {
+        Map<String, String> snapshot = new LinkedHashMap<>();
+        catalog.forEach((id, entry) -> snapshot.put(id, entry.summary().revision()));
+        return snapshot;
+    }
+
+    private void publishChanges(Map<String, String> previous) {
+        Map<String, String> current = revisionSnapshot();
+        Set<String> changed = new LinkedHashSet<>();
+        for (Map.Entry<String, String> entry : current.entrySet()) {
+            if (!Objects.equals(previous.get(entry.getKey()), entry.getValue())) changed.add(entry.getKey());
+        }
+        Set<String> removed = new LinkedHashSet<>(previous.keySet());
+        removed.removeAll(current.keySet());
+        if (changed.isEmpty() && removed.isEmpty()) return;
+        Bukkit.getPluginManager().callEvent(new MythicItemsChangedEvent(
+                changed, removed, previous, current, generation.get()
+        ));
     }
 
     @SuppressWarnings("deprecation")

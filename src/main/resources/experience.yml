@@ -2,9 +2,9 @@ default:
   experience: 10
 
 mythic:
-  # InfernalBoss:
-  #   experience: 500
+# InfernalBoss:
+#   experience: 500
 
 vanilla:
-  # ZOMBIE:
-  #   experience: 15
+# ZOMBIE:
+#   experience: 15
